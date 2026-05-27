@@ -174,8 +174,14 @@
     .video-card {
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      overflow: hidden;
       background: var(--bg-alt);
+    }
+    .video-clip {
+      border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px);
+      overflow: hidden;
+    }
+    .video-clip iframe {
+      display: block; width: 100%; aspect-ratio: 16/9; border: none;
     }
     .video-placeholder {
       width: 100%; aspect-ratio: 16/9;
@@ -192,8 +198,6 @@
     .video-placeholder span {
       font-size: 0.8rem; color: var(--muted); font-weight: 500;
     }
-    /* Once you have real video URLs, replace .video-placeholder with an iframe:
-       <iframe src="YOUR_VIDEO_URL" ... allowfullscreen></iframe>       */
     .video-info { padding: 1.25rem 1.5rem; }
     .video-tag {
       display: inline-block; font-size: 0.7rem; font-weight: 600;
@@ -373,29 +377,32 @@
     <p class="section-desc">Watch the system in action, from VR teleoperation inside the reconstructed scene to autonomous policy evaluation.</p>
     <div class="video-grid">
 
-      <!-- ── Video 1: replace the .video-placeholder div with your iframe ── -->
       <div class="video-card">
-        <div class="video-placeholder">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
-          <span>Intro video coming soon</span>
-        </div>
         <div class="video-info">
           <span class="video-tag">Introduction</span>
           <h3>Project Overview</h3>
           <p>A short introduction to our motivation, system architecture, and key contributions.</p>
         </div>
+        <div class="video-clip">
+          <div class="video-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+            <span>Intro video coming soon</span>
+          </div>
+        </div>
       </div>
 
-      <!-- ── Video 2: replace the .video-placeholder div with your iframe ── -->
       <div class="video-card">
-        <div class="video-placeholder">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
-          <span>Demo video coming soon</span>
-        </div>
         <div class="video-info">
           <span class="video-tag">Demo</span>
           <h3>VR Teleoperation &amp; Cube Handover</h3>
           <p>Full demonstration of real-time XR teleoperation inside the 3DGS reconstructed simulation environment.</p>
+        </div>
+        <div class="video-clip">
+          <iframe
+            src="https://drive.google.com/file/d/13a7mLnR9dAndvRD5OBJdYVVyik0LRDBs/preview"
+            allow="autoplay"
+            allowfullscreen
+          ></iframe>
         </div>
       </div>
 
