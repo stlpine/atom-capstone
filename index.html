@@ -180,7 +180,7 @@
       border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px);
       overflow: hidden;
     }
-    .video-clip iframe {
+    .video-clip iframe, .video-clip video {
       display: block; width: 100%; aspect-ratio: 16/9; border: none;
     }
     .video-placeholder {
@@ -274,7 +274,7 @@
 <!-- Nav -->
 <nav>
   <a class="nav-brand">
-    <img src="yonsei-logo.svg" alt="Yonsei University" />
+    <img src="assets/yonsei-logo.svg" alt="Yonsei University" />
     Team Atom · Yonsei CSE
   </a>
   <ul class="nav-links">
@@ -398,12 +398,9 @@
           <p>Full demonstration of real-time XR teleoperation inside the 3DGS reconstructed simulation environment.</p>
         </div>
         <div class="video-clip">
-          <iframe
-            src="https://drive.google.com/file/d/13a7mLnR9dAndvRD5OBJdYVVyik0LRDBs/preview"
-            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            referrerpolicy="no-referrer-when-downgrade"
-            allowfullscreen
-          ></iframe>
+          <video controls playsinline preload="metadata">
+            <source src="assets/demo.mp4" type="video/mp4" />
+          </video>
         </div>
       </div>
 
@@ -454,7 +451,7 @@
 
 <!-- Footer -->
 <footer>
-  <img src="yonsei-logo.svg" alt="Yonsei University" style="height:40px;width:40px;margin-bottom:0.75rem;opacity:0.7;" />
+  <img src="assets/yonsei-logo.svg" alt="Yonsei University" style="height:40px;width:40px;margin-bottom:0.75rem;opacity:0.7;" />
   <p>
     <strong>A Real2Sim Pipeline for Humanoid Imitation Learning</strong><br/>
     Team Atom · Yonsei University Computer Capstone Design · May 2026
