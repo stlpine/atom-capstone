@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Real2Sim: Humanoid Imitation Learning via Gaussian Splatting & XR Teleoperation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #002f6c;   /* Yonsei blue */
+      --navy-light: #1a4a8a;
+      --cyan:   #0099cc;
+      --text:   #1a1a2e;
+      --muted:  #5a6372;
+      --border: #dde3ec;
+      --bg:     #ffffff;
+      --bg-alt: #f4f7fb;
+      --radius: 12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Nav ─────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-weight: 700; font-size: 1rem;
+      color: var(--navy); letter-spacing: -0.02em; text-decoration: none;
+    }
+    .nav-brand img { height: 32px; width: 32px; display: block; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      text-decoration: none; font-size: 0.875rem; font-weight: 500;
+      color: var(--muted); transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--navy); }
+
+    /* ── Hero ────────────────────────────── */
+    .hero {
+      padding: 100px 2rem 80px;
+      text-align: center;
+      background: linear-gradient(160deg, #f0f5ff 0%, #ffffff 55%);
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-badge {
+      display: inline-block;
+      background: var(--navy);
+      color: #fff;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 14px; border-radius: 999px;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 700; line-height: 1.18;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      max-width: 820px; margin: 0 auto 1.5rem;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--navy);
+    }
+    .hero-sub {
+      font-size: 1.05rem; color: var(--muted);
+      max-width: 580px; margin: 0 auto 2.5rem;
+    }
+
+    /* ── Section shared ──────────────────── */
+    section { padding: 80px 2rem; }
+    .container { max-width: 960px; margin: 0 auto; }
+    .section-label {
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--cyan);
+      margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      font-weight: 700; letter-spacing: -0.02em;
+      color: var(--text); margin-bottom: 1rem;
+    }
+    .section-desc {
+      font-size: 1rem; color: var(--muted);
+      max-width: 640px; margin-bottom: 3rem;
+    }
+
+    /* ── About ───────────────────────────── */
+    #about { background: var(--bg); }
+    .about-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    .about-card {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 1.5rem;
+    }
+    .about-card .icon {
+      width: 42px; height: 42px;
+      background: var(--navy);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .about-card .icon svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 1.8; }
+    .about-card h3 {
+      font-size: 0.95rem; font-weight: 600;
+      color: var(--text); margin-bottom: 0.5rem;
+    }
+    .about-card p { font-size: 0.875rem; color: var(--muted); line-height: 1.7; }
+
+    /* ── Pipeline ────────────────────────── */
+    #pipeline { background: var(--bg-alt); }
+    .pipeline-steps {
+      display: flex; align-items: flex-start;
+      gap: 0;
+      position: relative;
+    }
+    .pipeline-step {
+      flex: 1; text-align: center; padding: 0 1rem;
+      position: relative;
+    }
+    .pipeline-step::after {
+      content: '';
+      position: absolute; top: 22px; left: calc(50% + 28px);
+      width: calc(100% - 56px); height: 2px;
+      background: linear-gradient(90deg, var(--navy), var(--cyan));
+    }
+    .pipeline-step:last-child::after { display: none; }
+    .step-num {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--navy); color: #fff;
+      font-weight: 700; font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 0.85rem;
+      position: relative; z-index: 1;
+    }
+    .pipeline-step h4 {
+      font-size: 0.85rem; font-weight: 600;
+      color: var(--text); margin-bottom: 0.35rem;
+    }
+    .pipeline-step p { font-size: 0.78rem; color: var(--muted); }
+
+    /* ── Videos ──────────────────────────── */
+    #videos { background: var(--bg); }
+    .video-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    .video-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--bg-alt);
+    }
+    .video-placeholder {
+      width: 100%; aspect-ratio: 16/9;
+      background: #e8eef6;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .video-placeholder svg {
+      width: 48px; height: 48px;
+      color: var(--navy); opacity: 0.35;
+    }
+    .video-placeholder span {
+      font-size: 0.8rem; color: var(--muted); font-weight: 500;
+    }
+    /* Once you have real video URLs, replace .video-placeholder with an iframe:
+       <iframe src="YOUR_VIDEO_URL" ... allowfullscreen></iframe>       */
+    .video-info { padding: 1.25rem 1.5rem; }
+    .video-tag {
+      display: inline-block; font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--cyan); margin-bottom: 0.4rem;
+    }
+    .video-info h3 {
+      font-size: 1rem; font-weight: 600;
+      color: var(--text); margin-bottom: 0.3rem;
+    }
+    .video-info p { font-size: 0.85rem; color: var(--muted); }
+
+    /* ── Team ────────────────────────────── */
+    #team { background: var(--bg-alt); }
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    .team-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      display: flex; gap: 1rem; align-items: center;
+    }
+    .avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--navy);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem; color: #fff; flex-shrink: 0;
+    }
+    .team-info h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.15rem; }
+    .team-info span { font-size: 0.8rem; color: var(--muted); }
+    .advisor-row {
+      display: flex; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap;
+    }
+    .advisor-card {
+      flex: 1; min-width: 220px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--navy);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+    .advisor-card .role {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--cyan); margin-bottom: 0.3rem;
+    }
+    .advisor-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.15rem; }
+    .advisor-card span { font-size: 0.82rem; color: var(--muted); }
+
+    /* ── Footer ──────────────────────────── */
+    footer {
+      padding: 2.5rem 2rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.82rem; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+    }
+    footer strong { color: var(--navy); }
+
+    /* ── Responsive ──────────────────────── */
+    @media (max-width: 768px) {
+      .about-grid, .video-grid, .team-grid { grid-template-columns: 1fr; }
+      .pipeline-steps { flex-direction: column; gap: 1.5rem; }
+      .pipeline-step::after { display: none; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-brand">
+    <img src="yonsei-logo.svg" alt="Yonsei University" />
+    Team Atom · Yonsei CSE
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#videos">Videos</a></li>
+    <li><a href="#team">Team</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">Capstone Design 2026</div>
+  <h1>A <em>Real2Sim</em> Pipeline for Humanoid Imitation Learning via <em>Gaussian Splatting</em> &amp; <em>XR Teleoperation</em></h1>
+  <p class="hero-sub">
+    Collecting robot manipulation demonstrations inside a photorealistic 3DGS-reconstructed simulation
+    using a VR headset, bridging the sim-to-real gap for humanoid learning.
+  </p>
+</section>
+
+<!-- About -->
+<section id="about">
+  <div class="container">
+    <p class="section-label">Overview</p>
+    <h2 class="section-title">Three Interconnected Objectives</h2>
+    <p class="section-desc">
+      We target an end-to-end pipeline: reconstruct a real environment, collect demonstrations
+      via immersive VR teleoperation, and train a manipulation policy. Everything runs inside simulation.
+    </p>
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="icon">
+          <!-- cube icon -->
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        </div>
+        <h3>Real-to-Sim Reconstruction</h3>
+        <p>Reconstruct the real lab environment with 3D Gaussian Splatting and import it as a collision-aware physics scene in NVIDIA Isaac Sim, visually faithful and physically accurate.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">
+          <!-- VR icon -->
+          <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="3"/><path d="M8 18v2M16 18v2"/><circle cx="8.5" cy="12.5" r="1.5"/><circle cx="15.5" cy="12.5" r="1.5"/></svg>
+        </div>
+        <h3>XR Teleoperation</h3>
+        <p>A Pico 4 Ultra VR headset streams hand and arm poses via WebXR. A dexterous retargeting module maps 21-keypoint hand skeletons to the Unitree G1 Dex3 fingers at 50 Hz over DDS.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">
+          <!-- brain/policy icon -->
+          <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4c0 .34-.04.67-.1 1H16a4 4 0 0 1 4 4 4 4 0 0 1-1.17 2.83"/><path d="M12 2a4 4 0 0 0-4 4c0 .34.04.67.1 1H8a4 4 0 0 0-4 4 4 4 0 0 0 1.17 2.83"/><path d="M12 22v-8M9 15l3 3 3-3"/></svg>
+        </div>
+        <h3>Imitation Learning</h3>
+        <p>Demonstrations are converted to a LeRobot-compatible dataset and used to train an ACT (Action Chunking with Transformers) policy, then evaluated in closed-loop inside the same sim.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pipeline -->
+<section id="pipeline">
+  <div class="container">
+    <p class="section-label">System</p>
+    <h2 class="section-title">End-to-End Pipeline</h2>
+    <p class="section-desc">From raw RGB-D scan to autonomous policy evaluation, entirely inside simulation.</p>
+    <div class="pipeline-steps">
+      <div class="pipeline-step">
+        <div class="step-num">01</div>
+        <h4>3DGS Scan</h4>
+        <p>Intel RealSense RGB-D capture of the real lab</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">02</div>
+        <h4>Isaac Sim Scene</h4>
+        <p>GaussGym / Holosoma import with physics objects</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">03</div>
+        <h4>VR Teleoperation</h4>
+        <p>Pico 4 Ultra → DDS bridge → G1 41-DOF arm control</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">04</div>
+        <h4>Data Recording</h4>
+        <p>Joint states + 3-camera frames at every sim step</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">05</div>
+        <h4>ACT Training</h4>
+        <p>LeRobot dataset → ACT policy → closed-loop eval</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Videos -->
+<section id="videos">
+  <div class="container">
+    <p class="section-label">Media</p>
+    <h2 class="section-title">Project Videos</h2>
+    <p class="section-desc">Watch the system in action, from VR teleoperation inside the reconstructed scene to autonomous policy evaluation.</p>
+    <div class="video-grid">
+
+      <!-- ── Video 1: replace the .video-placeholder div with your iframe ── -->
+      <div class="video-card">
+        <div class="video-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+          <span>Intro video coming soon</span>
+        </div>
+        <div class="video-info">
+          <span class="video-tag">Introduction</span>
+          <h3>Project Overview</h3>
+          <p>A short introduction to our motivation, system architecture, and key contributions.</p>
+        </div>
+      </div>
+
+      <!-- ── Video 2: replace the .video-placeholder div with your iframe ── -->
+      <div class="video-card">
+        <div class="video-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+          <span>Demo video coming soon</span>
+        </div>
+        <div class="video-info">
+          <span class="video-tag">Demo</span>
+          <h3>VR Teleoperation &amp; Cube Handover</h3>
+          <p>Full demonstration of real-time XR teleoperation inside the 3DGS reconstructed simulation environment.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Team -->
+<section id="team">
+  <div class="container">
+    <p class="section-label">People</p>
+    <h2 class="section-title">Team Atom</h2>
+    <p class="section-desc">Yonsei University · Department of Computer Science and Engineering</p>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="avatar">유</div>
+        <div class="team-info">
+          <h4>Hoisung Yoo</h4>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="avatar">강</div>
+        <div class="team-info">
+          <h4>Minseo Kang</h4>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="avatar">권</div>
+        <div class="team-info">
+          <h4>Donghyeon Kwon</h4>
+        </div>
+      </div>
+    </div>
+    <div class="advisor-row">
+      <div class="advisor-card">
+        <div class="role">Professor</div>
+        <h4>Prof. Youngun Lee</h4>
+        <span>Yonsei University</span>
+      </div>
+      <div class="advisor-card">
+        <div class="role">Industry Mentor</div>
+        <h4>Donggeon Kim</h4>
+        <span>Samsung Electronics · Future Robot AI Group</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <img src="yonsei-logo.svg" alt="Yonsei University" style="height:40px;width:40px;margin-bottom:0.75rem;opacity:0.7;" />
+  <p>
+    <strong>A Real2Sim Pipeline for Humanoid Imitation Learning</strong><br/>
+    Team Atom · Yonsei University Computer Capstone Design · May 2026
+  </p>
+</footer>
+
+</body>
+</html>
